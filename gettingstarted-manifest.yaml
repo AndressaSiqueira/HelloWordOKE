@@ -1,0 +1,48 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ${namespace}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: node-gettingstarted-deployment
+  namespace: ${namespace}
+spec:
+  selector:
+    matchLabels:
+      app: node-gettingstarted
+  replicas: 3
+  template:
+    metadata:
+      labels:
+        app: node-gettingstarted
+    spec:
+      containers:
+        - name: node-gettingstarted
+          # enter the path to your image, be sure to include the correct region prefix
+          image: vcp.ocir.io/id3kyspkytmr/node-express-getting-started:${BUILDRUN_HASH}
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 80
+              protocol: TCP
+      imagePullSecrets:
+      - name: ocisecret
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: node-gettingstarted-service
+  namespace: ${namespace}
+  annotations: 
+    service.beta.kubernetes.io/oci-load-balancer-shape: "flexible"
+    service.beta.kubernetes.io/oci-load-balancer-shape-flex-min: "10"
+    service.beta.kubernetes.io/oci-load-balancer-shape-flex-max: "100"
+spec:
+  type: LoadBalancer
+  ports:
+    - port: 80
+      protocol: TCP
+      targetPort: 80
+  selector:
+    app: node-gettingstarted
